@@ -1,4 +1,5 @@
 
+use std::fs;
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -13,6 +14,27 @@ impl Graph {
 
     fn new() -> Graph {
         Graph { names: Vec::new(), parents: Vec::new(), children: Vec::new(), name2idx: HashMap::new() }
+    }
+
+    fn parse_line(line: &str) -> (String, Vec<String>) {
+        let parts: Vec<&str> = line.split("->").collect();
+        let children: Vec<&str> = parts[1].split(",").collect();
+        (parts[0].to_string(), children.iter().map(|x| x.to_string()).collect())
+    }
+
+    fn from_file(filename: &str) -> Graph {
+        println!("Creating graph from file: {}", filename);
+
+        let mut graph = Graph::new();
+
+        let contents = fs::read_to_string(filename).expect("Could not read file");
+        for (i, line) in contents.lines().enumerate() {
+            let (parent, children) = Graph::parse_line(line);
+            println!("Line {} | Parent: {}, Children: {:?}", i, parent, children);
+            let _ = graph.add_with_children(parent, children);
+        }
+
+        graph
     }
 
     fn add_to_parent(&mut self, child: String, parent: String) -> Result<usize, &str> {
@@ -51,18 +73,32 @@ impl Graph {
             let _ = self.add_to_parent((*child).clone(), name.clone());
         }
     }
+
+    fn add_with_children_r(&mut self, name: &str, children: Vec<&str>) {
+        let name_ = name.to_string();
+        let children_: Vec<_> = children.iter().map(|x| { x.to_string() }).collect();
+        self.add_with_children(name_, children_);
+    }
 }
 
 
 fn main() {
     println!("A graph of nodes in Rust!");
 
-    // let mut gr = Graph::new();
+    let mut gr = Graph::new();
+    let _ = gr.add_with_children_r("A", vec!["B", "C", "D"]);
+
+    println!("\n{:?}\n", &gr);
+
+    let gr_from_file = Graph::from_file("graph.txt");
+    println!("\n{:?}\n", gr_from_file);
+
 }
 
 
 #[cfg(test)]
 mod test {
+
     use super::Graph;
 
     fn assert_graph_field_len(graph: &Graph, len: usize) {
@@ -73,9 +109,9 @@ mod test {
 
     #[test]
     fn using_box_vec() {
-        let bv = vec![Box::new("a".to_string())];
-        assert_eq!(bv.contains(&Box::new("a".to_string())), true);
-        assert_eq!(bv.contains(&Box::new("b".to_string())), false);
+        let bv = vec![Box::new("a")];
+        assert_eq!(bv.contains(&Box::new("a")), true);
+        assert_eq!(bv.contains(&Box::new("b")), false);
     }
 
     #[test]
@@ -89,7 +125,7 @@ mod test {
         let mut gr = Graph::new();
 
         // Add a node without parent
-        gr.add_with_children("A".to_string(), Vec::new());
+        gr.add_with_children_r("A", Vec::new());
 
         // Add children to root node
         let _ = gr.add_to_parent("B".to_string(), "A".to_string());
@@ -111,20 +147,29 @@ mod test {
         let mut gr = Graph::new();
 
         // Add node without parent
-        gr.add_with_children("Root".to_string(), Vec::new());
+        gr.add_with_children_r("Root", Vec::new());
         assert_graph_field_len(&gr, 1);
 
         // Add children to existing parent
-        gr.add_with_children("Root".to_string(), vec!["A".to_string()]);
+        gr.add_with_children_r("Root", vec!["A"]);
         assert_graph_field_len(&gr, 2);
 
         // Add more children
-        let parent = "A".to_string();
-        let children = vec!["B".to_string(), "C".to_string(), "D".to_string()];
-        gr.add_with_children(parent, children);
+        let parent = "A";
+        let children = vec!["B", "C", "D"];
+        gr.add_with_children_r(parent, children);
 
         assert_graph_field_len(&gr, 5);
         assert_eq!(gr.children[1].len(), 3);
+    }
+
+    #[test]
+    fn test_parse_line() {
+        let l1 = "A->B,C";
+        let (parent1, children1) = Graph::parse_line(l1);
+        let ref_children = vec!["B".to_string(), "C".to_string()];
+        assert_eq!(parent1, "A".to_string());
+        assert_eq!(children1, ref_children);
     }
 }
 
@@ -133,3 +178,4 @@ mod test {
 // Upstream
 // Downstream
 // Searches
+// Error handling
