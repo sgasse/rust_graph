@@ -4,9 +4,9 @@ use std::collections::HashMap;
 #[derive(Debug)]
 struct Graph {
     names: Vec<Box<String>>,
+    name2idx: HashMap<String, usize>,
     parents: Vec<Option<usize>>,
     children: Vec<Vec<usize>>,
-    name2idx: HashMap<String, usize>,
 }
 
 impl Graph {
@@ -22,8 +22,8 @@ impl Graph {
         let node_idx = self.parents.len();
 
         // Check if child node already exists
-        if self.names.contains(&Box::new(child.clone())) {
-            return Err("Child already exists");
+        if self.name2idx.contains_key(&child.clone()) {
+            return Err("Node exists already");
         }
 
         self.names.push(Box::new(child.clone()));
@@ -38,11 +38,11 @@ impl Graph {
         let node_idx = self.parents.len();
 
         // Check if parent is already there
-        if !self.names.contains(&Box::new(name.clone())) {
+        if !self.name2idx.contains_key(&name.clone()) {
             // Parent node does not exist - create
             self.names.push(Box::new(name.clone()));
-            self.parents.push(None);
             self.name2idx.insert(name.clone(), node_idx);
+            self.parents.push(None);
             self.children.push(Vec::new());
         }
 
@@ -85,34 +85,6 @@ mod test {
     }
 
     #[test]
-    fn test_add_with_parent_r() {
-        //let mut gr = Graph::new();
-
-        // Add a node without parent
-
-        // Add a node with an existing parent
-
-        // Try to add a node with a non-existant parent
-
-        // Try adding a node with spaces and unicode name
-        
-        // Reference the weird node
-    }
-
-    #[test]
-    fn test_add_with_parent() {
-        // To see the output, run with `-- --nocapture`
-        //let mut gr = Graph::new();
-
-        // Add a node without parent
-
-        // Add a node with a parent
-
-        // Add a node without a parent
-    }
-
-
-    #[test]
     fn test_add_to_parent() {
         let mut gr = Graph::new();
 
@@ -123,6 +95,15 @@ mod test {
         let _ = gr.add_to_parent("B".to_string(), "A".to_string());
         assert_graph_field_len(&gr, 2);
         assert_eq!(gr.children[0].len(), 1);
+
+        // Reject existing node
+        let mut res = gr.add_to_parent("A".to_string(), "B".to_string());
+        assert_eq!(res, Err("Node exists already"));
+
+        // Add node with exotic name
+        res = gr.add_to_parent("Wéïrd näµëß§".to_string(), "A".to_string());
+        assert_eq!(res, Ok(2));
+        assert_graph_field_len(&gr, 3);
     }
 
     #[test]
@@ -152,5 +133,3 @@ mod test {
 // Upstream
 // Downstream
 // Searches
-// Reject existing node
-// Lookup in hashmap instead of vec
