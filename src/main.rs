@@ -1,6 +1,6 @@
 
 use std::fs;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 #[derive(Debug)]
 struct Graph {
@@ -81,6 +81,39 @@ impl Graph {
     }
 }
 
+fn bfs(graph: &Graph, start: String) -> Result<Vec<String>, &str> {
+    let mut visited: HashSet<usize> = HashSet::new();
+    let mut queue: VecDeque<usize> = VecDeque::new();
+
+    let mut traversal: Vec<String> = Vec::new();
+
+    match graph.name2idx.get(&start) {
+        Some(&start_idx) => queue.push_back(start_idx),
+        None => return Err("Start node not found."),
+    }
+
+    while !queue.is_empty() {
+        // Get next node from the queue
+        let node_idx = queue.pop_front().unwrap();
+
+        // Add children if they are not yet visited
+        for child in &graph.children[node_idx] {
+            if !visited.contains(child) {
+                queue.push_back(*child);
+            }
+        }
+
+        // Add current node to traversal
+        let node_name = (*graph.names[node_idx]).clone();
+        traversal.push(node_name);
+
+        // Mark current node as visited
+        visited.insert(node_idx);
+    }
+
+    Ok(traversal)
+}
+
 
 fn main() {
     println!("A graph of nodes in Rust!");
@@ -92,6 +125,9 @@ fn main() {
 
     let gr_from_file = Graph::from_file("graph.txt");
     println!("\n{:?}\n", gr_from_file);
+
+    let traversal = bfs(&gr_from_file, "A".to_string());
+    println!("{:?}", traversal);
 
 }
 
@@ -174,8 +210,8 @@ mod test {
 }
 
 // TODO
-// Reading Graph from File
 // Upstream
 // Downstream
 // Searches
 // Error handling
+// Integration Tests
