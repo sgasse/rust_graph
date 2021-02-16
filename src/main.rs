@@ -10,6 +10,24 @@ struct Graph {
     children: Vec<Vec<usize>>,
 }
 
+trait SearchBuffer<T> {
+    fn get_next(&mut self) -> Option<T>;
+    fn enlist(&mut self, idx: T);
+    fn is_empty(&self) -> bool;
+}
+
+impl<T> SearchBuffer<T> for VecDeque<T> {
+    fn get_next(&mut self) -> Option<T> {
+        self.pop_front()
+    }
+    fn enlist(&mut self, val: T) {
+        self.push_back(val);
+    }
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
+}
+
 impl Graph {
 
     fn new() -> Graph {
@@ -79,39 +97,79 @@ impl Graph {
         let children_: Vec<_> = children.iter().map(|x| { x.to_string() }).collect();
         self.add_with_children(name_, children_);
     }
-}
 
-fn bfs(graph: &Graph, start: String) -> Result<Vec<String>, &str> {
-    let mut visited: HashSet<usize> = HashSet::new();
-    let mut queue: VecDeque<usize> = VecDeque::new();
 
-    let mut traversal: Vec<String> = Vec::new();
-
-    match graph.name2idx.get(&start) {
-        Some(&start_idx) => queue.push_back(start_idx),
-        None => return Err("Start node not found."),
+    fn gen_bfs(&self, start: String) -> Result<Vec<String>, &str> {
+        let mut queue: VecDeque<usize> = VecDeque::new();
+        self.traverse(start, &mut queue)
     }
 
-    while !queue.is_empty() {
-        // Get next node from the queue
-        let node_idx = queue.pop_front().unwrap();
+    fn traverse(&self, start: String, buffer: &mut dyn SearchBuffer<usize>) -> Result<Vec<String>, &str> {
+        let mut visited: HashSet<usize> = HashSet::new();
 
-        // Add children if they are not yet visited
-        for child in &graph.children[node_idx] {
-            if !visited.contains(child) {
-                queue.push_back(*child);
-            }
+        let mut traversal: Vec<String> = Vec::new();
+
+        match self.name2idx.get(&start) {
+            Some(&start_idx) => buffer.enlist(start_idx),
+            None => return Err("Start node not found."),
         }
 
-        // Add current node to traversal
-        let node_name = (*graph.names[node_idx]).clone();
-        traversal.push(node_name);
+        while !buffer.is_empty() {
+            // Get next node from the queue
+            let node_idx = buffer.get_next().unwrap();
 
-        // Mark current node as visited
-        visited.insert(node_idx);
+            // Add children if they are not yet visited
+            for child in &self.children[node_idx] {
+                if !visited.contains(child) {
+                    buffer.enlist(*child);
+                }
+            }
+
+            // Add current node to traversal
+            let node_name = (*self.names[node_idx]).clone();
+            traversal.push(node_name);
+
+            // Mark current node as visited
+            visited.insert(node_idx);
+        }
+
+        Ok(traversal)
+
     }
 
-    Ok(traversal)
+    fn bfs(&self, start: String) -> Result<Vec<String>, &str> {
+        let mut visited: HashSet<usize> = HashSet::new();
+        let mut queue: VecDeque<usize> = VecDeque::new();
+
+        let mut traversal: Vec<String> = Vec::new();
+
+        match self.name2idx.get(&start) {
+            Some(&start_idx) => queue.push_back(start_idx),
+            None => return Err("Start node not found."),
+        }
+
+        while !queue.is_empty() {
+            // Get next node from the queue
+            let node_idx = queue.pop_front().unwrap();
+
+            // Add children if they are not yet visited
+            for child in &self.children[node_idx] {
+                if !visited.contains(child) {
+                    queue.push_back(*child);
+                }
+            }
+
+            // Add current node to traversal
+            let node_name = (*self.names[node_idx]).clone();
+            traversal.push(node_name);
+
+            // Mark current node as visited
+            visited.insert(node_idx);
+        }
+
+        Ok(traversal)
+    }
+
 }
 
 
@@ -126,9 +184,11 @@ fn main() {
     let gr_from_file = Graph::from_file("graph.txt");
     println!("\n{:?}\n", gr_from_file);
 
-    let traversal = bfs(&gr_from_file, "A".to_string());
+    let mut traversal = gr_from_file.bfs("A".to_string());
     println!("{:?}", traversal);
 
+    traversal = gr_from_file.gen_bfs("A".to_string());
+    println!("{:?}", traversal);
 }
 
 
