@@ -16,6 +16,18 @@ trait SearchBuffer<T> {
     fn is_empty(&self) -> bool;
 }
 
+impl<T> SearchBuffer<T> for Vec<T> {
+    fn get_next(&mut self) -> Option<T> {
+        self.pop()
+    }
+    fn enlist(&mut self, val: T) {
+        self.push(val);
+    }
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
+}
+
 impl<T> SearchBuffer<T> for VecDeque<T> {
     fn get_next(&mut self) -> Option<T> {
         self.pop_front()
@@ -98,8 +110,13 @@ impl Graph {
         self.add_with_children(name_, children_);
     }
 
+    fn dfs(&self, start: String) -> Result<Vec<String>, &str> {
+        let mut stack: Vec<usize> = Vec::new();
+        self.traverse(start, &mut stack)
+    }
 
-    fn gen_bfs(&self, start: String) -> Result<Vec<String>, &str> {
+
+    fn bfs(&self, start: String) -> Result<Vec<String>, &str> {
         let mut queue: VecDeque<usize> = VecDeque::new();
         self.traverse(start, &mut queue)
     }
@@ -137,39 +154,6 @@ impl Graph {
 
     }
 
-    fn bfs(&self, start: String) -> Result<Vec<String>, &str> {
-        let mut visited: HashSet<usize> = HashSet::new();
-        let mut queue: VecDeque<usize> = VecDeque::new();
-
-        let mut traversal: Vec<String> = Vec::new();
-
-        match self.name2idx.get(&start) {
-            Some(&start_idx) => queue.push_back(start_idx),
-            None => return Err("Start node not found."),
-        }
-
-        while !queue.is_empty() {
-            // Get next node from the queue
-            let node_idx = queue.pop_front().unwrap();
-
-            // Add children if they are not yet visited
-            for child in &self.children[node_idx] {
-                if !visited.contains(child) {
-                    queue.push_back(*child);
-                }
-            }
-
-            // Add current node to traversal
-            let node_name = (*self.names[node_idx]).clone();
-            traversal.push(node_name);
-
-            // Mark current node as visited
-            visited.insert(node_idx);
-        }
-
-        Ok(traversal)
-    }
-
 }
 
 
@@ -184,11 +168,11 @@ fn main() {
     let gr_from_file = Graph::from_file("graph.txt");
     println!("\n{:?}\n", gr_from_file);
 
-    let mut traversal = gr_from_file.bfs("A".to_string());
-    println!("{:?}", traversal);
+    let mut traversal = gr_from_file.dfs("A".to_string());
+    println!("DFS:\n{:?}", traversal);
 
-    traversal = gr_from_file.gen_bfs("A".to_string());
-    println!("{:?}", traversal);
+    traversal = gr_from_file.bfs("A".to_string());
+    println!("BFS:\n{:?}", traversal);
 }
 
 
@@ -272,6 +256,5 @@ mod test {
 // TODO
 // Upstream
 // Downstream
-// Searches
 // Error handling
 // Integration Tests
