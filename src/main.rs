@@ -1,8 +1,10 @@
+// Copyright 2021 Simon B. Gasse
 
 use std::fs;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 #[derive(Debug)]
+/// Structure representing a graph with String as node names
 struct Graph {
     names: Vec<Box<String>>,
     name2idx: HashMap<String, usize>,
@@ -10,18 +12,21 @@ struct Graph {
     children: Vec<Vec<usize>>,
 }
 
+/// Trait containing node buffers used during search
+/// 
+/// Abstracts a stack and a queue for graph traversal
 trait SearchBuffer<T> {
-    fn get_next(&mut self) -> Option<T>;
     fn enlist(&mut self, idx: T);
+    fn get_next(&mut self) -> Option<T>;
     fn is_empty(&self) -> bool;
 }
 
 impl<T> SearchBuffer<T> for Vec<T> {
-    fn get_next(&mut self) -> Option<T> {
-        self.pop()
-    }
     fn enlist(&mut self, val: T) {
         self.push(val);
+    }
+    fn get_next(&mut self) -> Option<T> {
+        self.pop()
     }
     fn is_empty(&self) -> bool {
         self.is_empty()
@@ -29,11 +34,11 @@ impl<T> SearchBuffer<T> for Vec<T> {
 }
 
 impl<T> SearchBuffer<T> for VecDeque<T> {
-    fn get_next(&mut self) -> Option<T> {
-        self.pop_front()
-    }
     fn enlist(&mut self, val: T) {
         self.push_back(val);
+    }
+    fn get_next(&mut self) -> Option<T> {
+        self.pop_front()
     }
     fn is_empty(&self) -> bool {
         self.is_empty()
@@ -41,17 +46,12 @@ impl<T> SearchBuffer<T> for VecDeque<T> {
 }
 
 impl Graph {
-
+    /// Create a new empty graph
     fn new() -> Graph {
         Graph { names: Vec::new(), parents: Vec::new(), children: Vec::new(), name2idx: HashMap::new() }
     }
 
-    fn parse_line(line: &str) -> (String, Vec<String>) {
-        let parts: Vec<&str> = line.split("->").collect();
-        let children: Vec<&str> = parts[1].split(",").collect();
-        (parts[0].to_string(), children.iter().map(|x| x.to_string()).collect())
-    }
-
+    /// Create graph from file
     fn from_file(filename: &str) -> Graph {
         println!("Creating graph from file: {}", filename);
 
@@ -67,6 +67,52 @@ impl Graph {
         graph
     }
 
+    /// Add a node with its children to the graph
+    fn add_with_children_r(&mut self, name: &str, children: Vec<&str>) {
+        let name_ = name.to_string();
+        let children_: Vec<_> = children.iter().map(|x| { x.to_string() }).collect();
+        self.add_with_children(name_, children_);
+    }
+
+    /// Runs a depth-first-search on the graph
+    fn dfs(&self, start: String) -> Result<Vec<String>, &str> {
+        let mut stack: Vec<usize> = Vec::new();
+        self.traverse(start, &mut stack)
+    }
+
+    /// Runs a breadth-first-search on the graph
+    fn bfs(&self, start: String) -> Result<Vec<String>, &str> {
+        let mut queue: VecDeque<usize> = VecDeque::new();
+        self.traverse(start, &mut queue)
+    }
+
+    /// Parse a line for creating a graph from file
+    fn parse_line(line: &str) -> (String, Vec<String>) {
+        let parts: Vec<&str> = line.split("->").collect();
+        let children: Vec<&str> = parts[1].split(",").collect();
+        (parts[0].to_string(), children.iter().map(|x| x.to_string()).collect())
+    }
+
+    /// Add a node with its children to the graph
+    fn add_with_children(&mut self, name: String, children: Vec<String>) {
+        let node_idx = self.parents.len();
+
+        // Check if parent is already there
+        if !self.name2idx.contains_key(&name.clone()) {
+            // Parent node does not exist - create
+            self.names.push(Box::new(name.clone()));
+            self.name2idx.insert(name.clone(), node_idx);
+            self.parents.push(None);
+            self.children.push(Vec::new());
+        }
+
+        // Add children
+        for child in children.iter() {
+            let _ = self.add_to_parent((*child).clone(), name.clone());
+        }
+    }
+
+    /// Add a child node to an existing parent node
     fn add_to_parent(&mut self, child: String, parent: String) -> Result<usize, &str> {
         // Parent node exists
         let p_idx = *(self.name2idx.get(&parent).unwrap());
@@ -86,41 +132,12 @@ impl Graph {
         Ok(node_idx)
     }
 
-    fn add_with_children(&mut self, name: String, children: Vec<String>) {
-        let node_idx = self.parents.len();
-
-        // Check if parent is already there
-        if !self.name2idx.contains_key(&name.clone()) {
-            // Parent node does not exist - create
-            self.names.push(Box::new(name.clone()));
-            self.name2idx.insert(name.clone(), node_idx);
-            self.parents.push(None);
-            self.children.push(Vec::new());
-        }
-
-        // Add children
-        for child in children.iter() {
-            let _ = self.add_to_parent((*child).clone(), name.clone());
-        }
-    }
-
-    fn add_with_children_r(&mut self, name: &str, children: Vec<&str>) {
-        let name_ = name.to_string();
-        let children_: Vec<_> = children.iter().map(|x| { x.to_string() }).collect();
-        self.add_with_children(name_, children_);
-    }
-
-    fn dfs(&self, start: String) -> Result<Vec<String>, &str> {
-        let mut stack: Vec<usize> = Vec::new();
-        self.traverse(start, &mut stack)
-    }
-
-
-    fn bfs(&self, start: String) -> Result<Vec<String>, &str> {
-        let mut queue: VecDeque<usize> = VecDeque::new();
-        self.traverse(start, &mut queue)
-    }
-
+    /// Walks the graph with a predefined buffer
+    /// 
+    /// # Arguments
+    /// 
+    /// * `start` - A String defining the name of the start node for traversal
+    /// * `buffer` - A SearchBuffer, e.g. a stack for DFS or a queue for BFS
     fn traverse(&self, start: String, buffer: &mut dyn SearchBuffer<usize>) -> Result<Vec<String>, &str> {
         let mut visited: HashSet<usize> = HashSet::new();
 
@@ -132,7 +149,7 @@ impl Graph {
         }
 
         while !buffer.is_empty() {
-            // Get next node from the queue
+            // Get next node from the buffer
             let node_idx = buffer.get_next().unwrap();
 
             // Add children if they are not yet visited
@@ -252,9 +269,3 @@ mod test {
         assert_eq!(children1, ref_children);
     }
 }
-
-// TODO
-// Upstream
-// Downstream
-// Error handling
-// Integration Tests
