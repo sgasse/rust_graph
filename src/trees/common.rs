@@ -1,5 +1,3 @@
-// Copyright 2021 Simon B. Gasse
-
 use std::collections::VecDeque;
 
 /// Trait containing node buffers used during search

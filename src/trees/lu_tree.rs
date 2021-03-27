@@ -1,7 +1,3 @@
-// Copyright 2021 Simon B. Gasse
-
-
-
 pub struct LuTree<T> {
     parents: Vec<Option<usize>>,
     children: Vec<Vec<usize>>,

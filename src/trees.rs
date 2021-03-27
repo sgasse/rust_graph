@@ -1,4 +1,3 @@
-
 mod common;
 mod linked_tree;
 mod lu_tree;

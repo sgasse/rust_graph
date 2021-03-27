@@ -1,5 +1,3 @@
-// Copyright 2021 Simon B. Gasse
-
 use std::fs;
 use std::collections::{HashMap, HashSet, VecDeque};
 

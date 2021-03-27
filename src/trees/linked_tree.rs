@@ -1,5 +1,3 @@
-// Copyright 2021 Simon B. Gasse
-
 use std::cell::RefCell;
 
 use crate::trees::common::NodeData;

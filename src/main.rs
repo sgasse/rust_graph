@@ -1,5 +1,3 @@
-// Copyright 2021 Simon B. Gasse
-
 mod trees;
 
 fn main() {
