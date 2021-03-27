@@ -2,10 +2,7 @@
 
 use std::cell::RefCell;
 
-#[derive(Debug,Clone,PartialEq)]
-pub struct NodeData {
-    value: f32
-}
+use crate::trees::common::NodeData;
 
 #[derive(Debug,PartialEq)]
 pub struct Node<'graph, T> {
@@ -35,7 +32,7 @@ pub fn add_child_to_parent<'b, T>(parent: &'b Node<'b, T>, child: &'b Node<'b, T
 mod test {
 
     use super::Node;
-    use super::NodeData;
+    use crate::trees::common::NodeData;
     use super::add_child_to_parent;
 
     #[test]

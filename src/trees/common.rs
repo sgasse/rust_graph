@@ -34,3 +34,8 @@ impl<T> SearchBuffer<T> for VecDeque<T> {
         self.is_empty()
     }
 }
+
+#[derive(Debug,Clone,PartialEq)]
+pub struct NodeData {
+    pub value: f32
+}
