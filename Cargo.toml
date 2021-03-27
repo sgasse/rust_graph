@@ -1,9 +1,15 @@
 [package]
 name = "graph_algos"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Simon Gasse <sgasse@users.noreply.github.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "graph_algos"
+path = "src/lib.rs"
+
+[[bin]]
+name = "graph_algos"
+path = "src/main.rs"
 
 [dependencies]
