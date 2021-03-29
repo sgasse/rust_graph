@@ -1,15 +1,15 @@
 [package]
-name = "graph_algos"
-version = "0.2.0"
+name = "rgraphs"
+version = "0.3.0"
 authors = ["Simon Gasse <sgasse@users.noreply.github.com>"]
 edition = "2018"
 
 [lib]
-name = "graph_algos"
+name = "rgraphs"
 path = "src/lib.rs"
 
 [[bin]]
-name = "graph_algos"
+name = "rgraphs"
 path = "src/main.rs"
 
 [dependencies]

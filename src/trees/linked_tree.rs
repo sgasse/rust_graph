@@ -1,7 +1,5 @@
 use std::cell::RefCell;
 
-use crate::trees::common::NodeData;
-
 #[derive(Debug,PartialEq)]
 pub struct Node<'graph, T> {
     parent: RefCell<Option<&'graph Node<'graph, T>>>,
