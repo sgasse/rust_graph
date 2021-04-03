@@ -3,7 +3,7 @@ macro_rules! get_from_tree {
     ($field:expr, $node_idx:expr) => {
         match $node_idx {
             n if $node_idx < $field.len() => Ok($field[n].clone()),
-            _ => Err(("Access out of bounds!")),
+            _ => Err(()),
         }
     };
 }
@@ -26,6 +26,8 @@ impl<T> LuTree<T> where
     }
 
     pub fn add_node(&mut self, parent: Option<usize>, data: T) -> Result<usize, ()> {
+        let node_id = self.parents.len();
+
         match parent {
             Some(p) => {
                 if p > self.parents.len() {
@@ -33,43 +35,43 @@ impl<T> LuTree<T> where
                 }
 
                 self.parents.push(Some(p));
+                self.children[p].push(node_id);
             },
             None => self.parents.push(None),
         }
 
-        let node_id = self.parents.len();
         self.children.push(vec![]);
         self.data.push(data);
 
         Ok(node_id)
     }
 
-    pub fn set(&mut self, node: usize, data: T) -> Result<(), &str> {
+    pub fn set(&mut self, node: usize, data: T) -> Result<(), ()> {
         match node {
             n if node < self.data.len() => {
                 self.data[n] = data;
                 Ok(())
             },
-            _ => Err("Access out of bounds!"),
+            _ => Err(()),
         }
     }
 
-    pub fn get(&self, node: usize) -> Result<T, &str> {
+    pub fn get(&self, node: usize) -> Result<T, ()> {
         get_from_tree!(self.data, node)
     }
 
-    pub fn parent(&self, node: usize) -> Result<usize, &str> {
+    pub fn parent(&self, node: usize) -> Result<usize, ()> {
         let p_res = get_from_tree!(self.parents, node);
         match p_res {
             Ok(p_opt) => match p_opt {
                 Some(p) => Ok(p),
-                None => Err("Node has not parent"),
+                None => Err(()),
             },
-            Err(e) => Err(e),
+            Err(_) => Err(()),
         }
     }
 
-    pub fn children(&self, node: usize) -> Result<Vec<usize>, &str> {
+    pub fn children(&self, node: usize) -> Result<Vec<usize>, ()> {
         get_from_tree!(self.children, node)
     }
 }
@@ -100,6 +102,7 @@ mod test {
 
         // Get children of node
         let l1_children = tree.children(0).unwrap();
+        assert_eq!(l1_children.len(), 2);
         for child in l1_children {
             assert!(child == 1 || child == 2, "Unexpected child!");
         }
